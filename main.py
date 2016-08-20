@@ -6,20 +6,10 @@ import threading
 from pynput.keyboard import Key, Listener
 
 def on_press(key):
-    print('{0} pressed'.format(
-        key))
     if (key == Key.f8):
-        print('F8!')
-        say_hi()
+        startclick()
     elif (key == Key.f9):
-        print('F9!')
-        say_bye()
-
-def on_release(key):
-    print('{0} release'.format(
-        key))
-    if key == Key.esc:
-        return False
+        stopclick()
 
 class thread(threading.Thread):
     def __init__(self):
@@ -37,23 +27,6 @@ class thread(threading.Thread):
         while (self._stopper.is_set() == False):
             pyautogui.click()
 
-class kbthread(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self._stopper = threading.Event()
-
-    def stopit(self):
-        self._stopper.set()
-
-    def stopped(self):
-        return self._stopper.is_set()
-
-    def run(self):
-        with Listener(
-                on_press=on_press,
-                on_release=on_release) as self.listener:
-            self.listener.join()
-
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
@@ -63,19 +36,19 @@ class Application(tk.Frame):
     def create_widgets(self):
         self.start = tk.Button(self)
         self.start["text"] = "Start(F8)"
-        self.start["command"] = say_hi
+        self.start["command"] = startclick
         self.start.pack(side="top")
 
         self.stop = tk.Button(self)
         self.stop["text"] = "Stop(F9)"
-        self.stop["command"] = say_bye
+        self.stop["command"] = stopclick
         self.stop.pack(side="top")
 
-def say_hi():
+def startclick():
     if (t.isAlive() == False):
         t.start()
 
-def say_bye():
+def stopclick():
     global t
     if (t.isAlive() == True and t.stopped() == False):
         t.stopit()
@@ -83,11 +56,11 @@ def say_bye():
         t = thread()
 
 def on_closing():
-    kb.listener.stop()
+    kb.stop()
     root.destroy()
 
 t = thread()
-kb = kbthread()
+kb = Listener(on_press=on_press, on_release=None)
 kb.start()
 root = tk.Tk()
 app = Application(master=root)
